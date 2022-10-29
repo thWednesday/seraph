@@ -1,0 +1,12 @@
+[package]
+name = "seraph"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "3.2.22", features = ["derive"] }
+hex-literal = "0.3.4"
+md5 = { version = "0.7.0", features = [] }
+regex = { version = "1.6.0", features = [] }
+text2art = { version = "1.0.1", features = []}
+# tokio = { version = "1", features = ["full"] }
