@@ -186,12 +186,12 @@ fn main() {
             let raw = std::str::from_utf8(hashed.as_slice()).unwrap();
 
             debug!(
-                format!("STRING / HASH: {} -> {:?}", combination, raw),
+                format!("STRING / HASH: {} -> {}", combination, raw),
                 verbose
             );
 
             if hash.eq(&Hash::hex(&hashed)) {
-                debug!(format!("STRING FOUND: {} -> {:?}", combination, raw));
+                debug!(format!("STRING FOUND: {} -> {}", combination, raw));
                 found = true;
 
                 break;
