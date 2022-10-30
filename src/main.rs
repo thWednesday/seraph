@@ -1,14 +1,14 @@
 // #![allow(non_snake_case)]
-#![allow(unused_variables)]
+// #![allow(unused_variables)]
 
 mod hash;
+mod util;
 
 use allwords::Alphabet;
 use clap::{value_parser, Arg, Command};
-use hash::{compute, hash_from, identify_hash, valid_hash};
+use hash::{Hash, HashType, Hasher};
 use text2art::{BasicFonts, Font, Printer};
 
-// #[tokio::main]
 fn main() {
     let logo: String = Printer::with_font(Font::from_basic(BasicFonts::Bell).unwrap())
         .render_text(format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str())
@@ -45,9 +45,20 @@ fn main() {
                 .short('p')
                 .long("preset")
                 .takes_value(true)
-                .default_value("alphabet")
+                .default_value("none")
                 .value_parser(value_parser!(String))
                 .requires("bruteforce")
+                .possible_values([
+                    "none",
+                    "lw",
+                    "low",
+                    "lowercase",
+                    "up",
+                    "uppercase",
+                    "nr",
+                    "numbers",
+                    "all",
+                ])
                 .help("Alphabet preset")
                 .conflicts_with("alphabet"),
         )
@@ -94,10 +105,22 @@ fn main() {
         )
         .get_matches();
 
-    let raw_hash = matches.get_one::<String>("hash").unwrap();
-    let hash: &[u8] = &valid_hash(raw_hash.as_bytes());
-    let hash_type = hash_from(matches.get_one::<String>("type").unwrap().to_uppercase());
-    let mut alphabet_raw = match matches
+    let raw_type = HashType::hash_from(matches.get_one::<String>("hash").unwrap().to_string());
+    let mut hasher: Hash = Hash {
+        hash_type: raw_type,
+        hasher: Hasher::Null,
+    };
+
+    let hash: &[u8] = &hash::Hash::hex(
+        &matches
+            .get_one::<String>("hash")
+            .unwrap()
+            .to_owned()
+            .into_bytes(),
+    );
+
+    let length = matches.get_one::<usize>("length").unwrap();
+    let mut raw_alphabet = match matches
         .get_one::<String>("preset")
         .unwrap()
         .to_lowercase()
@@ -105,8 +128,8 @@ fn main() {
     {
         "lw" | "low" | "lowercase" => "abcdefghijklmnopqrstuvwxyz ",
         "up" | "uppercase" => "ABCDEFGHIJKLMNOPQRSTUVWXYZ ",
-        "n" | "nr" | "numbers" => "0123456789 ",
-        "a" | "all" => " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,./;'[]<>?:\"{}-=!@#$%^&*() ",
+        "nr" | "numbers" => "0123456789 ",
+        "all" => " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,./;'[]<>?:\"{}-=!@#$%^&*() ",
         _ => matches.get_one::<String>("alphabet").unwrap(),
     };
 
@@ -118,20 +141,14 @@ fn main() {
     {
         // https://stackoverflow.com/a/65976485
         // quite the hack
-        alphabet_raw = &alphabet_raw[0..alphabet_raw.len() - 1];
+        raw_alphabet = &raw_alphabet[0..raw_alphabet.len() - 1];
     }
 
-    let alphabet = Alphabet::from_chars_in_str(alphabet_raw).unwrap();
+    let alphabet = Alphabet::from_chars_in_str(raw_alphabet).unwrap();
 
     let verbose: bool = matches.get_flag("verbose");
     macro_rules! debug {
         ($string: expr) => {
-            // match VERBOSE {
-            //     1 => println!("[{}] {}", env!("CARGO_PKG_NAME"), $string),
-            //     0 => (),
-            //     _ => (),
-            // }
-
             println!("[{}] {}", env!("CARGO_PKG_NAME"), $string)
         };
 
@@ -143,41 +160,38 @@ fn main() {
         };
     }
 
-    debug!(format!("ALPHABET: {}", alphabet_raw));
+    let raw_hash = matches.get_one::<String>("hash").unwrap();
 
-    if hash.len() > 1 {
-        let hash_string = hash_type.to_string();
-        debug!(format!("{} {}", raw_hash, hash_string));
+    debug!(format!("ALPHABET: {}", raw_alphabet));
+    debug!(format!("{}", raw_hash));
 
-        if hash_string == "NULL" {
-            debug!(
-                format!(
-                    "GUESSED {}",
-                    identify_hash(hash.len().try_into().expect("Error getting hash length"))
-                        .to_string()
-                ),
-                true
-            )
-        }
-    } else {
-        debug!("Not a valid hash")
+    if hasher.hash_type.to_string().eq("NULL") {
+        hasher.hash_type = HashType::identify_hash(
+            raw_hash
+                .len()
+                .try_into()
+                .expect("Error getting hash length"),
+        );
+
+        debug!(format!("GUESSED {}", hasher.hash_type.to_string()))
     }
+
+    hasher.hasher();
 
     if matches.get_flag("bruteforce") {
         let mut found: bool = false;
 
-        for combination in alphabet.all_words(Some(*matches.get_one::<usize>("length").unwrap())) {
-            let hashed = compute(combination.as_str());
+        for combination in alphabet.all_words(Some(*length)) {
+            let hashed = hasher.compute(combination.as_str());
+            let raw = std::str::from_utf8(hashed.as_slice()).unwrap();
 
             debug!(
-                format!("STRING / HASH: {} -> {}", combination, hashed),
+                format!("STRING / HASH: {} -> {:?}", combination, raw),
                 verbose
             );
 
-            // println!("{:#?} {:#?}", hash, hashed.as_bytes());
-            // break;
-            if hash.eq(&valid_hash(hashed.as_bytes())) {
-                debug!(format!("STRING FOUND: {} -> {}", combination, hashed));
+            if hash.eq(&Hash::hex(&hashed)) {
+                debug!(format!("STRING FOUND: {} -> {:?}", combination, raw));
                 found = true;
 
                 break;
@@ -185,7 +199,7 @@ fn main() {
         }
 
         if !found {
-            debug!("String couldn't be bruteforced")
+            util::error("String couldn't be bruteforced");
         }
     }
 }
