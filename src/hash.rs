@@ -3,8 +3,7 @@
     https://docs.rs/md5
 */
 
-use hex_literal::hex;
-use regex::Regex;
+use hex::decode;
 
 pub enum Hash {
     MD5,
@@ -28,8 +27,8 @@ impl Hash {
     }
 }
 
-pub fn hashFromString(hashType: String) -> Hash {
-    match hashType.as_str() {
+pub fn hash_from(hash_type: String) -> Hash {
+    match hash_type.as_str() {
         "MD5" => Hash::MD5,
         "SHA224" => Hash::SHA224,
         "SHA256" => Hash::SHA256,
@@ -39,8 +38,8 @@ pub fn hashFromString(hashType: String) -> Hash {
     }
 }
 
-pub fn hashType(hashLength: i32) -> Hash {
-    match hashLength {
+pub fn identify_hash(hash_length: i32) -> Hash {
+    match hash_length {
         32 => Hash::MD5,
         56 => Hash::SHA224,
         64 => Hash::SHA256,
@@ -50,27 +49,26 @@ pub fn hashType(hashLength: i32) -> Hash {
     }
 }
 
-pub fn validHash(hash: String) -> bool {
+pub fn valid_hash(hash: &[u8]) -> Vec<u8> {
     match hash.len() {
         32 | 56 | 64 | 96 | 128 => {
-            let regex =
-                Regex::new(format!("(?i)([a-f\\d]{})", format!("{{{}}}", hash.len())).as_str())
-                    .unwrap();
+            // let regex =
+            //     Regex::new(format!("(?i)([a-f\\d]{})", format!("{{{}}}", hash.len())).as_str())
+            //         .unwrap();
 
-            let result = regex.captures_iter(hash.as_str());
-            let results = result.count();
+            // let result = regex.captures_iter(hash.as_str());
+            // let results = result.count();
 
-            // for mat in result {
-            //     println!("{:?}", mat);
-            // }
+            // return results > 0;
 
-            return results > 0;
+            // thanks @cyyynthia
+            return decode(hash).unwrap();
         }
 
-        _ => return false,
+        _ => Err("Not a valid hash").unwrap(),
     }
 }
 
-pub fn hash(seekanddestroy: &str) -> String {
-    return format!("{:x}", md5::compute(seekanddestroy));
+pub fn compute(uncomputed: &str) -> String {
+    return format!("{:x}", md5::compute(uncomputed));
 }

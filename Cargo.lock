@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allwords"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e458a08b9750efb75e4e50ee1213690ccdb1443f3ffa40864e1ba2eec956c95d"
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -95,10 +101,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "hex-literal"
-version = "0.3.4"
+name = "hex"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "indexmap"
@@ -201,10 +207,11 @@ checksum = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
 
 [[package]]
 name = "seraph"
-version = "1.0.0"
+version = "1.1.2"
 dependencies = [
+ "allwords",
  "clap",
- "hex-literal",
+ "hex",
  "md5",
  "regex",
  "text2art",

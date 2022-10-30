@@ -1,11 +1,12 @@
 [package]
 name = "seraph"
-version = "1.0.0"
+version = "1.1.2"
 edition = "2021"
 
 [dependencies]
+allwords = "0.1.2"
 clap = { version = "3.2.22", features = ["derive"] }
-hex-literal = "0.3.4"
+hex = { version = "0.4.3", features = []}
 md5 = { version = "0.7.0", features = [] }
 regex = { version = "1.6.0", features = [] }
 text2art = { version = "1.0.1", features = []}
