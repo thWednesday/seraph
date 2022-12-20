@@ -5,7 +5,7 @@ Seraph is a hash bruteforce program
 # Installation
 
 ```bash
-git clone https://github.com/arctich/seraph
+git clone https://github.com/thWednesday/seraph
 cd seraph
 cargo install --path .
 ```
